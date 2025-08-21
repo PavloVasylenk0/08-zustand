@@ -21,12 +21,25 @@ export async function generateMetadata({
   try {
     const note = await fetchNoteById(id);
     return {
-      title: note.title || "Note Details",
+      title: `${note.title} | NoteHub`,
       description: note.content.substring(0, 160),
+      openGraph: {
+        title: `${note.title} | NoteHub`,
+        description: note.content.substring(0, 160),
+        url: `https://notehub.com/notes/${id}`,
+        images: [
+          {
+            url: "https://ac.goit.global/fullstack/react/notehub-og-meta.jpg",
+            width: 1200,
+            height: 630,
+            alt: note.title,
+          },
+        ],
+      },
     };
   } catch {
     return {
-      title: "Note not found",
+      title: "Note not found | NoteHub",
       description: "The requested note does not exist.",
     };
   }

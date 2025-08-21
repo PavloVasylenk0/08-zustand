@@ -2,13 +2,13 @@ import NotesClient from "./Notes.client";
 import { fetchNotes } from "@/lib/api";
 import { notFound } from "next/navigation";
 import type { NoteTag } from "@/types/note";
+import type { Metadata } from "next";
 
 interface PageProps {
   params: Promise<{ slug: string[] }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-// Валидация тега
 const isValidTag = (tag: string | undefined): tag is NoteTag | undefined => {
   if (!tag) return true;
   const validTags: NoteTag[] = [
@@ -20,6 +20,45 @@ const isValidTag = (tag: string | undefined): tag is NoteTag | undefined => {
   ];
   return validTags.includes(tag as NoteTag);
 };
+
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const tag = slug?.[0] === "All" ? undefined : slug?.[0];
+
+  if (!isValidTag(tag)) {
+    return {
+      title: "Invalid Filter | NoteHub",
+      description: "The requested filter is not valid.",
+    };
+  }
+
+  const title = tag
+    ? `Notes filtered by ${tag} | NoteHub`
+    : "All Notes | NoteHub";
+  const description = tag
+    ? `Browse notes filtered by ${tag} tag`
+    : "Browse all your notes";
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `https://notehub.com/notes/filter/${tag || "All"}`,
+      images: [
+        {
+          url: "https://ac.goit.global/fullstack/react/notehub-og-meta.jpg",
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+    },
+  };
+}
 
 export default async function NotesPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
@@ -45,11 +84,8 @@ export default async function NotesPage({ params, searchParams }: PageProps) {
       tag: tag as NoteTag | undefined,
     });
 
-    return (
-      <NotesClient initialData={initialData} tag={tag as NoteTag | undefined} />
-    );
-  } catch (error) {
-    console.error("Error fetching notes:", error);
+    return <NotesClient initialData={initialData} tag={tag} />;
+  } catch {
     notFound();
   }
 }

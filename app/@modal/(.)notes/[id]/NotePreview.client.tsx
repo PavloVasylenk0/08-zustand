@@ -33,11 +33,11 @@ export default function NotePreview({ note }: NotePreviewProps) {
             <br />
             Last updated: {new Date(note.updatedAt).toLocaleDateString()}
           </div>
-          <button className={css.backBtn} onClick={handleClose}>
-            ← Back
-          </button>
         </div>
       </div>
+      <button className={css.backBtn} onClick={handleClose}>
+        ← Back
+      </button>
     </Modal>
   );
 }
