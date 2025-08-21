@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useDebounce } from "use-debounce";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchNotes, deleteNote, type FetchNotesResponse } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
+import { fetchNotes, type FetchNotesResponse } from "@/lib/api";
 import type { NoteTag } from "@/types/note";
 import NoteList from "@/components/NoteList/NoteList";
 import SearchBox from "@/components/SearchBox/SearchBox";
@@ -22,31 +22,10 @@ export default function NotesClient({ initialData, tag }: NotesClientProps) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debouncedSearch] = useDebounce(search, 500);
-  const queryClient = useQueryClient();
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
     setPage(1);
-  };
-
-  const deleteMutation = useMutation({
-    mutationFn: deleteNote,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notes"] });
-    },
-    onError: (error) => {
-      console.error("Failed to delete note:", error);
-      alert("Failed to delete note. Please try again.");
-    },
-  });
-
-  const handleDeleteNote = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this note?")) {
-      try {
-        await deleteMutation.mutateAsync(id);
-      } catch {
-      }
-    }
   };
 
   const { data, isLoading, isError } = useQuery<FetchNotesResponse>({
@@ -97,11 +76,7 @@ export default function NotesClient({ initialData, tag }: NotesClientProps) {
         {!isLoading && !isError && (
           <>
             {data?.notes?.length ? (
-              <NoteList
-                notes={data.notes}
-                onDelete={handleDeleteNote}
-                isDeleting={deleteMutation.isPending}
-              />
+              <NoteList notes={data.notes} />
             ) : (
               <div className={css.empty}>No notes found</div>
             )}

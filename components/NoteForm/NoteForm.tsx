@@ -6,15 +6,30 @@ import { createNote } from '@/lib/api';
 import { useNoteStore } from "@/lib/store/noteStore";
 import type { NoteTag } from "@/types/note";
 import css from "./NoteForm.module.css";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const tags: NoteTag[] = ["Todo", "Work", "Personal", "Meeting", "Shopping"];
 
 export default function NoteForm() {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
 
   const { draft, setDraft, clearDraft } = useNoteStore();
+
+  const createMutation = useMutation({
+    mutationFn: createNote,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+      clearDraft();
+      router.back();
+    },
+    onError: (error) => {
+      setError(
+        error instanceof Error ? error.message : "Failed to create note"
+      );
+    },
+  });
 
   useEffect(() => {
   }, []);
@@ -24,24 +39,15 @@ export default function NoteForm() {
   };
 
   const handleSubmit = async (formData: FormData) => {
-    setIsSubmitting(true);
     setError(null);
 
-    try {
-      const noteData = {
-        title: formData.get("title") as string,
-        content: formData.get("content") as string,
-        tag: formData.get("tag") as NoteTag,
-      };
+    const noteData = {
+      title: formData.get("title") as string,
+      content: formData.get("content") as string,
+      tag: formData.get("tag") as NoteTag,
+    };
 
-      await createNote(noteData);
-      clearDraft();
-      router.back();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create note");
-    } finally {
-      setIsSubmitting(false);
-    }
+    createMutation.mutate(noteData);
   };
 
   const handleCancel = () => {
@@ -64,6 +70,7 @@ export default function NoteForm() {
           onChange={(e) => handleInputChange("title", e.target.value)}
           className={css.input}
           required
+          disabled={createMutation.isPending}
         />
       </div>
 
@@ -79,6 +86,7 @@ export default function NoteForm() {
           className={css.textarea}
           rows={6}
           required
+          disabled={createMutation.isPending}
         />
       </div>
 
@@ -92,6 +100,7 @@ export default function NoteForm() {
           value={draft.tag}
           onChange={(e) => handleInputChange("tag", e.target.value as NoteTag)}
           className={css.select}
+          disabled={createMutation.isPending}
         >
           {tags.map((tag) => (
             <option key={tag} value={tag}>
@@ -106,16 +115,16 @@ export default function NoteForm() {
           type="button"
           onClick={handleCancel}
           className={css.cancelButton}
-          disabled={isSubmitting}
+          disabled={createMutation.isPending}
         >
           Cancel
         </button>
         <button
           type="submit"
           className={css.submitButton}
-          disabled={isSubmitting}
+          disabled={createMutation.isPending}
         >
-          {isSubmitting ? "Creating..." : "Create Note"}
+          {createMutation.isPending ? "Creating..." : "Create Note"}
         </button>
       </div>
     </form>

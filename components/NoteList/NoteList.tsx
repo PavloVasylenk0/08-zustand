@@ -4,7 +4,7 @@ import type { Note } from "@/types/note";
 
 interface NoteListProps {
   notes: Note[];
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
   isDeleting?: boolean;
 }
 
@@ -16,7 +16,9 @@ export default function NoteList({
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    onDelete(id);
+    if (onDelete) {
+      onDelete(id);
+    }
   };
 
   return (
@@ -31,14 +33,6 @@ export default function NoteList({
           <div className={css.footer}>
             <span className={css.tag}>{note.tag}</span>
             <div className={css.actions}>
-              <button
-                className={css.button}
-                onClick={(e) => handleDelete(note.id, e)}
-                disabled={isDeleting}
-                title="Delete note"
-              >
-                {isDeleting ? "Deleting..." : "Delete"}
-              </button>
               <Link
                 href={`/notes/${note.id}`}
                 className={css.link}
@@ -46,6 +40,16 @@ export default function NoteList({
               >
                 View
               </Link>
+              {onDelete && (
+                <button
+                  className={css.button}
+                  onClick={(e) => handleDelete(note.id, e)}
+                  disabled={isDeleting}
+                  title="Delete note"
+                >
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </button>
+              )}
             </div>
           </div>
         </li>
